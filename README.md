@@ -1,4 +1,7 @@
-# koshatul/jwt [![GoDoc][doc-img]][doc] [![Build Status][ci-img]][ci]
+# koshatul/jwt
+
+[![Build Status](https://travis-ci.org/koshatul/jwt.svg?branch=master)](https://travis-ci.org/koshatul/jwt)
+[![GoDoc](http://godoc.org/github.com/koshatul/jwt?status.svg)](http://godoc.org/github.com/koshatul/jwt)
 
 JWT Signer and Verifier for RSA Signed Tokens.
 
