@@ -28,30 +28,24 @@ var _ = Describe("JWT Verifier and Signer", func() {
 		Expect(result.Expires).To(BeTemporally("~", expiry, time.Microsecond))
 	})
 
-	// // Not a great use-case.
-	// It("should succeed, empty audience matches any audience", func() {
-	// 	notBefore := time.Now().UTC()
-	// 	expiry := time.Now().Add(time.Hour).UTC()
-	// 	token, err := jwt.Sign(signer, "subject", "audience", notBefore, expiry)
-	// 	Expect(err).NotTo(HaveOccurred())
-	// 	Expect(token).NotTo(BeEmpty())
+	It("should succeed, with multiple audiences, returning matched audience", func() {
+		issued, err := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
+		Expect(err).NotTo(HaveOccurred())
 
-	// 	publicKey, err := jwt.ParsePKCS1PublicKeyFromFileAFS(afs, "cert.pem")
-	// 	Expect(err).NotTo(HaveOccurred())
-	// 	specialVerifier := &jwt.RSAVerifier{
-	// 		Audience:  "",
-	// 		PublicKey: publicKey,
-	// 	}
+		token, err := signer.SignClaims(
+			jwt.String(jwt.Subject, "multi-audience-test"),
+			jwt.String(jwt.Audience, "audience2"),
+			jwt.String(jwt.Audience, "audience"),
+			jwt.String(jwt.Audience, "audience3"),
+			jwt.Any("custom", issued),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(token).NotTo(BeEmpty())
 
-	// 	result, err := specialVerifier.Verify(token)
-	// 	Expect(err).NotTo(HaveOccurred())
-	// 	Expect(result.IsOnline).To(BeFalse())
-	// 	Expect(result.Subject).To(Equal("subject"))
-	// 	Expect(result.ID).NotTo(BeEmpty())
-	// 	Expect(result.Audience).To(Equal("audience"))
-	// 	Expect(result.NotBefore).To(BeTemporally("~", notBefore, time.Microsecond))
-	// 	Expect(result.Expires).To(BeTemporally("~", expiry, time.Microsecond))
-	// })
+		result, err := verifier.Verify(token)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.Audience).To(Equal("audience"))
+	})
 
 	It("should succeed, with array of claims", func() {
 
@@ -129,6 +123,25 @@ var _ = Describe("JWT Verifier and Signer", func() {
 		Expect(result.Fingerprint).To(BeEmpty())
 
 		Expect(result.Claims).To(ContainElement(jwt.Time(jwt.Issued, issued)))
+	})
+
+	It("should succeed, claim:Issuer", func() {
+		token, err := signer.SignClaims(
+			jwt.String(jwt.Subject, "subject"),
+			jwt.String(jwt.Audience, "audience"),
+			jwt.String(jwt.Issuer, "Acme-Widgets"),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(token).NotTo(BeEmpty())
+
+		result, err := verifier.Verify(token)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.Subject).To(Equal("subject"))
+		Expect(result.ID).NotTo(BeEmpty())
+		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Fingerprint).To(BeEmpty())
+
+		Expect(result.Claims).To(ContainElement(jwt.String(jwt.Issuer, "Acme-Widgets")))
 	})
 
 	It("should succeed, claim:custom(time type)", func() {

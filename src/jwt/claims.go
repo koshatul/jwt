@@ -340,7 +340,7 @@ func constructRegisteredClaim(tokenClaims *jwt.Claims, claim Claim) error {
 	case Subject:
 		tokenClaims.Registered.Subject = claim.String
 	case Audience:
-		tokenClaims.Registered.Audiences = []string{claim.String}
+		tokenClaims.Registered.Audiences = append(tokenClaims.Registered.Audiences, claim.String)
 	case Expires:
 		if claim.Type == TimeType {
 			t, err := claim.Time()

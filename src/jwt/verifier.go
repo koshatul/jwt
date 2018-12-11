@@ -3,7 +3,6 @@ package jwt
 import (
 	"crypto/rsa"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/pascaldekloe/jwt"
@@ -27,6 +26,7 @@ type VerifyResult struct {
 	IsOnline    bool
 	Subject     string
 	Audience    string
+	Audiences   []string
 	Fingerprint string
 	NotBefore   time.Time
 	Expires     time.Time
@@ -68,7 +68,7 @@ func (v *RSAVerifier) getClaimMapFromClaims(claims *jwt.Claims) (map[string]Clai
 	if claims.Subject != "" {
 		c[Subject] = String(Subject, claims.Subject)
 	}
-	if len(claims.Audiences) != 0 {
+	if len(claims.Audiences) > 0 {
 		c[Audience] = String(Audience, claims.Audiences[0])
 	}
 	if claims.Expires != nil {
@@ -98,10 +98,6 @@ func (v *RSAVerifier) Verify(token []byte) (VerifyResult, error) {
 	if err != nil {
 		return result, err
 	}
-	// // Not a great use-case.
-	// if v.Audience != "" && !strings.EqualFold(v.Audience, claims.Audience) {
-	// 	return result, ErrTokenInvalidAudience
-	// }
 	if !matchAudience(claims, v.Audience) {
 		return result, ErrTokenInvalidAudience
 	}
@@ -113,12 +109,14 @@ func (v *RSAVerifier) Verify(token []byte) (VerifyResult, error) {
 		ID:        claims.ID,
 		NotBefore: claims.NotBefore.Time(),
 		Expires:   claims.Expires.Time(),
+		// If it reaches here, then the audience must exist in the provided list,
+		// so manually set `Audience` to the verifier supplied `Audience`
+		// and set new property `Audiences` to list of audiences.
+		Audience:  v.Audience,
+		Audiences: claims.Audiences,
 	}
 	if val, ok := claims.Set["onl"].(bool); ok {
 		result.IsOnline = val
-	}
-	if len(claims.Audiences) != 0 {
-		result.Audience = claims.Audiences[0]
 	}
 	result.Fingerprint, _ = claims.String("fpt")
 	result.Claims, err = v.getClaimMapFromClaims(claims)
@@ -127,8 +125,7 @@ func (v *RSAVerifier) Verify(token []byte) (VerifyResult, error) {
 
 func matchAudience(c *jwt.Claims, want string) bool {
 	for _, s := range c.Audiences {
-		// breaks RFC: audience is case sensitive
-		if strings.EqualFold(s, want) {
+		if s == want {
 			return true
 		}
 	}
