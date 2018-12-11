@@ -149,8 +149,8 @@ func (c Claim) Time() (time.Time, error) {
 		return t, nil
 	}
 	if c.Type == Float64Type {
-		t := time.Unix(int64(c.Float), 0)
-		return t, nil
+		t := jwt.NumericTime(c.Float)
+		return t.Time(), nil
 	}
 	return time.Time{}, ErrInvalidClaimType
 }
@@ -308,10 +308,10 @@ func Any(key string, value interface{}) Claim {
 }
 
 // ConstructClaimsFromSlice takes a slice of `Claim`s and returns a prepared `jwt.Claims` pointer, or an error if construction failed.
+// Duplicate keys will we overridden in order of apearance!
 func ConstructClaimsFromSlice(claims ...Claim) (*jwt.Claims, error) {
 	tokenClaims := &jwt.Claims{
-		Registered: jwt.Registered{},
-		Set:        map[string]interface{}{},
+		Set: map[string]interface{}{},
 	}
 	for _, claim := range claims {
 		if claim.IsRegistered() {
@@ -340,7 +340,7 @@ func constructRegisteredClaim(tokenClaims *jwt.Claims, claim Claim) error {
 	case Subject:
 		tokenClaims.Registered.Subject = claim.String
 	case Audience:
-		tokenClaims.Registered.Audience = claim.String
+		tokenClaims.Registered.Audiences = []string{claim.String}
 	case Expires:
 		if claim.Type == TimeType {
 			t, err := claim.Time()

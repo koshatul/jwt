@@ -43,7 +43,9 @@ func NewRSASignerFromFile(filename string) (Signer, error) {
 	}, nil
 }
 
-// SignClaims takes a list of claims and produces a signed token
+// SignClaims takes a list of claims and produces a signed token.
+// Duplicate keys will we overridden in order of apearance!
+// The issuer defaults to r.Issuer.
 func (r *RSASigner) SignClaims(claims ...Claim) ([]byte, error) {
 
 	tokenClaims, err := ConstructClaimsFromSlice(
