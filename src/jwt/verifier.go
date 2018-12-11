@@ -62,18 +62,30 @@ func NewRSAVerifierFromFile(audience, filename string) (Verifier, error) {
 
 func (v *RSAVerifier) getClaimMapFromClaims(claims *jwt.Claims) (map[string]Claim, error) {
 	c := make(map[string]Claim)
+	if claims.Issuer != "" {
+		c[Issuer] = String(Issuer, claims.Issuer)
+	}
+	if claims.Subject != "" {
+		c[Subject] = String(Subject, claims.Subject)
+	}
+	if len(claims.Audiences) != 0 {
+		c[Audience] = String(Audience, claims.Audiences[0])
+	}
+	if claims.Expires != nil {
+		c[Expires] = Time(Expires, claims.Expires.Time())
+	}
+	if claims.NotBefore != nil {
+		c[NotBefore] = Time(NotBefore, claims.NotBefore.Time())
+	}
+	if claims.Issued != nil {
+		c[Issued] = Time(Issued, claims.Issued.Time())
+	}
+	if claims.ID != "" {
+		c[ID] = String(ID, claims.ID)
+	}
+	// non standard claims
 	for k, v := range claims.Set {
-		switch k {
-		case NotBefore, Expires, Issued:
-			if f, ok := claims.Number(k); ok {
-				t := time.Unix(0, int64(f*float64(time.Second)))
-				c[k] = Time(k, t)
-			} else {
-				return c, ErrInvalidClaimType
-			}
-		default:
-			c[k] = Any(k, v)
-		}
+		c[k] = Any(k, v)
 	}
 	return c, nil
 }
@@ -90,35 +102,35 @@ func (v *RSAVerifier) Verify(token []byte) (VerifyResult, error) {
 	// if v.Audience != "" && !strings.EqualFold(v.Audience, claims.Audience) {
 	// 	return result, ErrTokenInvalidAudience
 	// }
-	if !strings.EqualFold(v.Audience, claims.Audience) {
+	if !matchAudience(claims, v.Audience) {
 		return result, ErrTokenInvalidAudience
 	}
 	if !claims.Valid(checkTime) {
 		return result, ErrTokenTimeNotValid
 	}
-	online := false
-	if val, ok := claims.Set["onl"]; ok {
-		online = val.(bool)
-	}
-	fingerprint := ""
-	if val, ok := claims.Set["fpt"]; ok {
-		fingerprint = val.(string)
-	}
 	result = VerifyResult{
-		Subject:     claims.Subject,
-		IsOnline:    online,
-		ID:          claims.ID,
-		Audience:    claims.Audience,
-		Fingerprint: fingerprint,
-		NotBefore:   time.Time{},
-		Expires:     time.Time{},
+		Subject:   claims.Subject,
+		ID:        claims.ID,
+		NotBefore: claims.NotBefore.Time(),
+		Expires:   claims.Expires.Time(),
 	}
-	if claims.NotBefore != nil {
-		result.NotBefore = claims.NotBefore.Time()
+	if val, ok := claims.Set["onl"].(bool); ok {
+		result.IsOnline = val
 	}
-	if claims.Expires != nil {
-		result.Expires = claims.Expires.Time()
+	if len(claims.Audiences) != 0 {
+		result.Audience = claims.Audiences[0]
 	}
+	result.Fingerprint, _ = claims.String("fpt")
 	result.Claims, err = v.getClaimMapFromClaims(claims)
 	return result, err
+}
+
+func matchAudience(c *jwt.Claims, want string) bool {
+	for _, s := range c.Audiences {
+		// breaks RFC: audience is case sensitive
+		if strings.EqualFold(s, want) {
+			return true
+		}
+	}
+	return false
 }

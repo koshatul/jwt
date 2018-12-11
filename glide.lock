@@ -1,8 +1,8 @@
-hash: 32d5e8559d62cb0ffdd4a037a9eae2de93848b1a9e22317ca4ba07f05e9342a9
-updated: 2018-09-28T13:21:17.614278+10:00
+hash: b3fc846a0418e3023211dbfd73f63b93d8875698b2f25fdd9e16c67a19c33429
+updated: 2018-12-11T00:25:14.970611+01:00
 imports:
 - name: github.com/pascaldekloe/jwt
-  version: 35d940f677411863070d4f495fc21fe29c9b6289
+  version: ded3fe6400d4db834d6c1e2a73b571bf8bdb5e23
 - name: github.com/satori/go.uuid
   version: f58768cc1a7a7e77a3bd49e98cdd21419399b6a3
 - name: github.com/spf13/afero
@@ -58,7 +58,7 @@ testImports:
   - reporters/stenographer/support/go-isatty
   - types
 - name: github.com/onsi/gomega
-  version: 7615b9433f86a8bdf29709bf288bc4fd0636a369
+  version: 65fb64232476ad9046e57c26cd0bff3d3a8dc6cd
   subpackages:
   - format
   - internal/assertion
