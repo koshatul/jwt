@@ -8,5 +8,5 @@ require (
 	github.com/pascaldekloe/jwt v1.6.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/afero v1.1.2
-	golang.org/x/text v0.3.1-0.20180223193632-27420a1a391f
+	golang.org/x/text v0.3.1-0.20180223193632-27420a1a391f // indirect
 )

@@ -3,7 +3,7 @@ package jwt_test
 import (
 	"time"
 
-	"github.com/koshatul/jwt"
+	"github.com/koshatul/jwt/v2"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
