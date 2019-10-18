@@ -3,7 +3,7 @@ package jwt_test
 import (
 	"time"
 
-	"github.com/koshatul/jwt/src/jwt"
+	"github.com/koshatul/jwt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -28,7 +28,7 @@ var _ = Describe("JWT Signer", func() {
 		Expect(result.IsOnline).To(BeFalse())
 		Expect(result.Subject).To(Equal("subject"))
 		Expect(result.ID).NotTo(BeEmpty())
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 		Expect(result.Fingerprint).To(BeEmpty())
 		Expect(result.NotBefore).To(BeTemporally("~", nbfTime, time.Microsecond))
 		Expect(result.Expires).To(BeTemporally("~", expTime, time.Microsecond))
@@ -44,7 +44,7 @@ var _ = Describe("JWT Signer", func() {
 		Expect(result.Subject).To(BeEmpty())
 		Expect(result.IsOnline).To(BeFalse())
 		Expect(result.ID).To(BeEmpty())
-		Expect(result.Audience).To(BeEmpty())
+		Expect(result.Audiences).To(BeEmpty())
 		Expect(result.Fingerprint).To(BeEmpty())
 		Expect(result.NotBefore).To(Equal(time.Time{}))
 		Expect(result.Expires).To(Equal(time.Time{}))
@@ -69,7 +69,7 @@ var _ = Describe("JWT Signer", func() {
 
 		result, err := verifier.Verify(token)
 		Expect(err).To(MatchError(jwt.ErrTokenInvalidAudience))
-		Expect(result.Audience).To(BeEmpty())
+		Expect(result.Audiences).To(BeEmpty())
 	})
 
 	It("should fail with an invalid expiry field type", func() {
@@ -100,12 +100,12 @@ var _ = Describe("JWT Signer", func() {
 		Expect(result.Subject).To(Equal("subject"))
 		Expect(result.ID).NotTo(BeEmpty())
 		Expect(result.IsOnline).To(BeFalse())
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 		Expect(result.Fingerprint).To(BeEmpty())
 		Expect(result.NotBefore).To(BeTemporally("~", nbfTime, time.Microsecond))
 		Expect(result.Expires).To(BeTemporally("~", expTime, time.Microsecond))
 
-		Expect(result.Claims).To(ContainElement(custom))
+		Expect(result.Claims["foo"]).To(ContainElement(custom))
 	})
 
 	It("should succeed with an online field", func() {
@@ -127,7 +127,7 @@ var _ = Describe("JWT Signer", func() {
 		Expect(result.Subject).To(Equal("subject"))
 		Expect(result.IsOnline).To(BeTrue())
 		Expect(result.ID).NotTo(BeEmpty())
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 		Expect(result.Fingerprint).To(BeEmpty())
 		Expect(result.NotBefore).To(BeTemporally("~", nbfTime, time.Microsecond))
 		Expect(result.Expires).To(BeTemporally("~", expTime, time.Microsecond))
@@ -154,7 +154,7 @@ var _ = Describe("JWT Signer", func() {
 		Expect(result.Subject).To(Equal("subject"))
 		Expect(result.IsOnline).To(BeTrue())
 		Expect(result.ID).NotTo(BeEmpty())
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 		Expect(result.Fingerprint).To(Equal("fingerpainting-is-fun"))
 		Expect(result.NotBefore).To(BeTemporally("~", nbfTime, time.Microsecond))
 		Expect(result.Expires).To(BeTemporally("~", expTime, time.Microsecond))
@@ -174,7 +174,7 @@ var _ = Describe("JWT Signer", func() {
 		Expect(result.Subject).To(BeEmpty())
 		Expect(result.IsOnline).To(BeFalse())
 		Expect(result.ID).To(Equal("ponies"))
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 		Expect(result.Fingerprint).To(BeEmpty())
 		Expect(result.NotBefore).To(Equal(time.Time{}))
 		Expect(result.Expires).To(Equal(time.Time{}))
@@ -194,7 +194,7 @@ var _ = Describe("JWT Signer", func() {
 		Expect(result.IsOnline).To(BeFalse())
 		Expect(result.Subject).To(Equal("new-subject"))
 		Expect(result.ID).NotTo(BeEmpty())
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 		Expect(result.Fingerprint).To(BeEmpty())
 		Expect(result.NotBefore).To(Equal(time.Time{}))
 		Expect(result.Expires).To(Equal(time.Time{}))
