@@ -64,7 +64,7 @@ func main() {
 
 	// Result contains Subject(username), Audience and other useful data, but just verifier.Verify not throwing an error is enough for validity.
 	fmt.Printf("Username: %s\n", result.Subject)
-	fmt.Printf("Service: %s\n", result.Audience)
+	fmt.Printf("Service: %s\n", result.Audiences[0])
 }
 ```
 
