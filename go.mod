@@ -1,4 +1,4 @@
-module github.com/koshatul/jwt
+module github.com/koshatul/jwt/v2
 
 go 1.13
 
