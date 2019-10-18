@@ -25,12 +25,11 @@ type VerifyResult struct {
 	ID          string
 	IsOnline    bool
 	Subject     string
-	Audience    string
 	Audiences   []string
 	Fingerprint string
 	NotBefore   time.Time
 	Expires     time.Time
-	Claims      map[string]Claim
+	Claims      map[string][]Claim
 }
 
 // Verifier takes a token and returns the subject if it is valid, or an error if it is not.
@@ -60,32 +59,36 @@ func NewRSAVerifierFromFile(audience, filename string) (Verifier, error) {
 	}, nil
 }
 
-func (v *RSAVerifier) getClaimMapFromClaims(claims *jwt.Claims) (map[string]Claim, error) {
-	c := make(map[string]Claim)
+func (v *RSAVerifier) getClaimMapFromClaims(claims *jwt.Claims) (map[string][]Claim, error) {
+	c := make(map[string][]Claim)
 	if claims.Issuer != "" {
-		c[Issuer] = String(Issuer, claims.Issuer)
+		c[Issuer] = []Claim{String(Issuer, claims.Issuer)}
 	}
 	if claims.Subject != "" {
-		c[Subject] = String(Subject, claims.Subject)
-	}
-	if len(claims.Audiences) > 0 {
-		c[Audience] = String(Audience, claims.Audiences[0])
+		c[Subject] = []Claim{String(Subject, claims.Subject)}
 	}
 	if claims.Expires != nil {
-		c[Expires] = Time(Expires, claims.Expires.Time())
+		c[Expires] = []Claim{Time(Expires, claims.Expires.Time())}
 	}
 	if claims.NotBefore != nil {
-		c[NotBefore] = Time(NotBefore, claims.NotBefore.Time())
+		c[NotBefore] = []Claim{Time(NotBefore, claims.NotBefore.Time())}
 	}
 	if claims.Issued != nil {
-		c[Issued] = Time(Issued, claims.Issued.Time())
+		c[Issued] = []Claim{Time(Issued, claims.Issued.Time())}
 	}
 	if claims.ID != "" {
-		c[ID] = String(ID, claims.ID)
+		c[ID] = []Claim{String(ID, claims.ID)}
 	}
+
+	aud := []Claim{}
+	for _, a := range claims.Audiences {
+		aud = append(aud, String(Audience, a))
+	}
+	c[Audience] = aud
+
 	// non standard claims
 	for k, v := range claims.Set {
-		c[k] = Any(k, v)
+		c[k] = []Claim{Any(k, v)}
 	}
 	return c, nil
 }
@@ -109,10 +112,6 @@ func (v *RSAVerifier) Verify(token []byte) (VerifyResult, error) {
 		ID:        claims.ID,
 		NotBefore: claims.NotBefore.Time(),
 		Expires:   claims.Expires.Time(),
-		// If it reaches here, then the audience must exist in the provided list,
-		// so manually set `Audience` to the verifier supplied `Audience`
-		// and set new property `Audiences` to list of audiences.
-		Audience:  v.Audience,
 		Audiences: claims.Audiences,
 	}
 	if val, ok := claims.Set["onl"].(bool); ok {

@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("JWT Verifier and Signer", func() {
+var _ = Describe("JWT Verifier", func() {
 
 	It("should succeed", func() {
 		notBefore := time.Now().UTC()
@@ -22,7 +22,7 @@ var _ = Describe("JWT Verifier and Signer", func() {
 		Expect(result.IsOnline).To(BeFalse())
 		Expect(result.Subject).To(Equal("subject"))
 		Expect(result.ID).NotTo(BeEmpty())
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 		Expect(result.Fingerprint).To(BeEmpty())
 		Expect(result.NotBefore).To(BeTemporally("~", notBefore, time.Microsecond))
 		Expect(result.Expires).To(BeTemporally("~", expiry, time.Microsecond))
@@ -44,7 +44,7 @@ var _ = Describe("JWT Verifier and Signer", func() {
 
 		result, err := verifier.Verify(token)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 	})
 
 	It("should succeed, with array of claims", func() {
@@ -60,16 +60,16 @@ var _ = Describe("JWT Verifier and Signer", func() {
 		Expect(result.IsOnline).To(BeFalse())
 		Expect(result.Subject).To(Equal("subject"))
 		Expect(result.ID).NotTo(BeEmpty())
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 		Expect(result.Fingerprint).To(BeEmpty())
 		Expect(result.NotBefore).To(BeTemporally("~", notBefore, time.Microsecond))
 		Expect(result.Expires).To(BeTemporally("~", expiry, time.Microsecond))
 
-		Expect(result.Claims).To(ContainElement(jwt.String(jwt.Subject, "subject")))
-		Expect(result.Claims).To(ContainElement(jwt.Bool("onl", false)))
-		Expect(result.Claims).To(ContainElement(jwt.String(jwt.Audience, "audience")))
+		Expect(result.Claims[jwt.Subject]).To(ContainElement(jwt.String(jwt.Subject, "subject")))
+		Expect(result.Claims["onl"]).To(ContainElement(jwt.Bool("onl", false)))
+		Expect(result.Claims[jwt.Audience]).To(ContainElement(jwt.String(jwt.Audience, "audience")))
 
-		nbf := result.Claims[jwt.NotBefore]
+		nbf := result.Claims[jwt.NotBefore][0]
 		nbfTime, nbfErr := nbf.Time()
 		Expect(nbfErr).NotTo(HaveOccurred())
 		Expect(nbfTime).To(BeTemporally("~", notBefore, time.Microsecond))
@@ -88,16 +88,16 @@ var _ = Describe("JWT Verifier and Signer", func() {
 		Expect(result.IsOnline).To(BeTrue())
 		Expect(result.Subject).To(Equal("subject"))
 		Expect(result.ID).NotTo(BeEmpty())
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 		Expect(result.Fingerprint).To(BeEmpty())
 		Expect(result.NotBefore).To(BeTemporally("~", notBefore, time.Microsecond))
 		Expect(result.Expires).To(BeTemporally("~", expiry, time.Microsecond))
 
-		Expect(result.Claims).To(ContainElement(jwt.String(jwt.Subject, "subject")))
-		Expect(result.Claims).To(ContainElement(jwt.Bool("onl", true)))
-		Expect(result.Claims).To(ContainElement(jwt.String(jwt.Audience, "audience")))
+		Expect(result.Claims[jwt.Subject]).To(ContainElement(jwt.String(jwt.Subject, "subject")))
+		Expect(result.Claims["onl"]).To(ContainElement(jwt.Bool("onl", true)))
+		Expect(result.Claims[jwt.Audience]).To(ContainElement(jwt.String(jwt.Audience, "audience")))
 
-		nbf := result.Claims[jwt.NotBefore]
+		nbf := result.Claims[jwt.NotBefore][0]
 		nbfTime, nbfErr := nbf.Time()
 		Expect(nbfErr).NotTo(HaveOccurred())
 		Expect(nbfTime).To(BeTemporally("~", notBefore, time.Microsecond))
@@ -119,10 +119,10 @@ var _ = Describe("JWT Verifier and Signer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result.Subject).To(Equal("subject"))
 		Expect(result.ID).NotTo(BeEmpty())
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 		Expect(result.Fingerprint).To(BeEmpty())
 
-		Expect(result.Claims).To(ContainElement(jwt.Time(jwt.Issued, issued)))
+		Expect(result.Claims[jwt.Issued]).To(ContainElement(jwt.Time(jwt.Issued, issued)))
 	})
 
 	It("should succeed, claim:Issuer", func() {
@@ -138,10 +138,10 @@ var _ = Describe("JWT Verifier and Signer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result.Subject).To(Equal("subject"))
 		Expect(result.ID).NotTo(BeEmpty())
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 		Expect(result.Fingerprint).To(BeEmpty())
 
-		Expect(result.Claims).To(ContainElement(jwt.String(jwt.Issuer, "Acme-Widgets")))
+		Expect(result.Claims[jwt.Issuer]).To(ContainElement(jwt.String(jwt.Issuer, "Acme-Widgets")))
 	})
 
 	It("should succeed, claim:custom(time type)", func() {
@@ -160,9 +160,9 @@ var _ = Describe("JWT Verifier and Signer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result.ID).NotTo(BeEmpty())
 		Expect(result.Subject).To(Equal("subject"))
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 
-		Expect(result.Claims["custom"].Time()).To(BeTemporally("~", issued, time.Second))
+		Expect(result.Claims["custom"][0].Time()).To(BeTemporally("~", issued, time.Second))
 	})
 
 	It("should succeed, claim:custom(string type)", func() {
@@ -176,7 +176,7 @@ var _ = Describe("JWT Verifier and Signer", func() {
 
 		result, err := verifier.Verify(token)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.Claims).To(ContainElement(jwt.String("custom", "foobar")))
+		Expect(result.Claims["custom"]).To(ContainElement(jwt.String("custom", "foobar")))
 	})
 
 	It("should succeed, claim:custom(int type)", func() {
@@ -190,7 +190,7 @@ var _ = Describe("JWT Verifier and Signer", func() {
 
 		result, err := verifier.Verify(token)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.Claims).To(ContainElement(jwt.Int("custom", 99)))
+		Expect(result.Claims["custom"]).To(ContainElement(jwt.Int("custom", 99)))
 	})
 
 	It("should succeed, Includes Fingerprint", func() {
@@ -217,7 +217,7 @@ var _ = Describe("JWT Verifier and Signer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result.IsOnline).To(BeTrue())
 		Expect(result.Fingerprint).To(Equal("fingerprint"))
-		Expect(result.Claims).To(ContainElement(jwt.String("fpt", "fingerprint")))
+		Expect(result.Claims["fpt"]).To(ContainElement(jwt.String("fpt", "fingerprint")))
 	})
 
 	It("should succeed, Algorithm RS256", func() {
@@ -279,7 +279,7 @@ var _ = Describe("JWT Verifier and Signer", func() {
 			PrivateKey: privateKey,
 		}
 		token, err := jwt.Sign(algSigner, "subject", "audience", false, time.Now(), time.Now().Add(time.Hour))
-		Expect(err).To(Equal(jwt.ErrAlgorithmUnknown))
+		Expect(err.Error()).To(Equal("jwt: algorithm \"HS256\" not in use"))
 		Expect(token).To(BeEmpty())
 	})
 
@@ -291,7 +291,7 @@ var _ = Describe("JWT Verifier and Signer", func() {
 		result, err := verifier.Verify(token)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result.Subject).To(Equal("subject"))
-		Expect(result.Audience).To(Equal("audience"))
+		Expect(result.Audiences).To(ContainElement("audience"))
 
 	})
 

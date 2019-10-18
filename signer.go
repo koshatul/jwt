@@ -16,9 +16,6 @@ const (
 	RS512 = jwt.RS512
 )
 
-// ErrAlgorithmUnknown signals an unsupported "alg" token (for the respective method).
-var ErrAlgorithmUnknown = jwt.ErrAlgUnk
-
 // Signer produces a token from a supplied subject and audience with notbefore and expiry times.
 type Signer interface {
 	SignClaims(claims ...Claim) ([]byte, error)
