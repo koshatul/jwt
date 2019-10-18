@@ -1,4 +1,5 @@
-/artifacts
+/artifacts/
+/.makefiles/
 /vendor
 
 # Binaries for programs and plugins

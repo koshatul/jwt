@@ -1,7 +1,7 @@
 package jwt_test
 
 import (
-	"github.com/koshatul/jwt/src/jwt"
+	"github.com/koshatul/jwt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"

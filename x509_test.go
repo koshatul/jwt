@@ -5,7 +5,7 @@ import (
 	"encoding/asn1"
 	"os"
 
-	"github.com/koshatul/jwt/src/jwt"
+	"github.com/koshatul/jwt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

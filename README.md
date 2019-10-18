@@ -1,13 +1,13 @@
 # koshatul/jwt
 
 [![Build Status](https://travis-ci.org/koshatul/jwt.svg?branch=master)](https://travis-ci.org/koshatul/jwt)
-[![GoDoc](https://godoc.org/github.com/koshatul/jwt/src/jwt?status.svg)](https://godoc.org/github.com/koshatul/jwt/src/jwt)
+[![GoDoc](https://godoc.org/github.com/koshatul/jwt?status.svg)](https://godoc.org/github.com/koshatul/jwt)
 
 JWT Signer and Verifier for RSA Signed Tokens.
 
 ## Installation
 
-`go get -u github.com/koshatul/jwt/src/jwt`
+`go get -u github.com/koshatul/jwt`
 
 ## Example 
 
@@ -19,7 +19,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/koshatul/jwt/src/jwt"
+	"github.com/koshatul/jwt"
 )
 
 func main() {

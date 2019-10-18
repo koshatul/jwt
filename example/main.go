@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/koshatul/jwt/src/jwt"
+	"github.com/koshatul/jwt"
 )
 
 func main() {
