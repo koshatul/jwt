@@ -10,6 +10,14 @@ import (
 
 var _ = Describe("JWT Signer", func() {
 
+	var signer jwt.Signer
+	var verifier jwt.Verifier
+
+	BeforeEach(func() {
+		signer = createSigner()
+		verifier = createVerifier()
+	})
+
 	It("should succeed", func() {
 		nbfTime := time.Now().UTC()
 		expTime := time.Now().Add(time.Hour).UTC()
@@ -198,6 +206,32 @@ var _ = Describe("JWT Signer", func() {
 		Expect(result.Fingerprint).To(BeEmpty())
 		Expect(result.NotBefore).To(Equal(time.Time{}))
 		Expect(result.Expires).To(Equal(time.Time{}))
+	})
+
+	It("should reject expired token", func() {
+		notBefore := time.Now().Add(-1 * time.Hour)
+		expires := time.Now().Add(-1 * time.Minute)
+		issued := time.Now()
+		token, err := signer.SignClaims(
+			jwt.String(jwt.Subject, "subject"),
+			jwt.String(jwt.Audience, "audience"),
+			jwt.Time(jwt.Issued, issued),
+			jwt.Time(jwt.NotBefore, notBefore),
+			jwt.Time(jwt.Expires, expires),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(token).NotTo(BeEmpty())
+
+		result, err := verifier.Verify(token)
+		Expect(err).To(HaveOccurred())
+		Expect(result.Subject).To(BeEmpty())
+		Expect(result.IsOnline).To(BeFalse())
+		Expect(result.Fingerprint).To(BeEmpty())
+		Expect(result.NotBefore).To(Equal(time.Time{}))
+		Expect(result.Expires).To(Equal(time.Time{}))
+		// Expect(result.Claims).To(ContainElement(jwt.Time(jwt.Issued, issued)))
+		// Expect(result.NotBefore).To(BeTemporally("~", notBefore, time.Millisecond))
+		// Expect(result.Expires).To(BeTemporally("~", expires, time.Millisecond))
 	})
 
 })

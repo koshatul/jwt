@@ -1,9 +1,11 @@
 language: go
 go:
 - '1.13'
+- '1.14'
 - 'tip'
 matrix:
   fast_finish: true
   allow_failures:
   - go: tip
-script: make ci
+script: 
+- make ci

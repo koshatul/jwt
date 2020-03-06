@@ -8,9 +8,8 @@ import (
 	"github.com/koshatul/jwt/v2"
 )
 
+// Generate Token from authentication service.
 func main() {
-	// Generate Token from authentication service.
-
 	// Create signer using RSA private key in PEM format (no passphrase)
 	signer, err := jwt.NewRSASignerFromFile("key.pem")
 	if err != nil {
@@ -48,7 +47,8 @@ func main() {
 		log.Panic(err)
 	}
 
-	// Result contains Subject(username), Audience and other useful data, but just verifier.Verify not throwing an error is enough for validity.
+	// Result contains Subject(username), Audience and other useful data, but just
+	// verifier.Verify not throwing an error is enough for validity.
 	fmt.Printf("Username: %s\n", result.Subject)
 	fmt.Printf("Service: %s\n", result.Audiences[0])
 }

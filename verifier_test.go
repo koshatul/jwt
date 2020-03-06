@@ -5,28 +5,53 @@ import (
 
 	"github.com/koshatul/jwt/v2"
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("JWT Verifier", func() {
 
-	It("should succeed", func() {
-		notBefore := time.Now().UTC()
-		expiry := time.Now().Add(time.Hour).UTC()
-		token, err := jwt.Sign(signer, "subject", "audience", false, notBefore, expiry)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(token).NotTo(BeEmpty())
+	var signer jwt.Signer
+	var verifier jwt.Verifier
 
-		result, err := verifier.Verify(token)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(result.IsOnline).To(BeFalse())
-		Expect(result.Subject).To(Equal("subject"))
-		Expect(result.ID).NotTo(BeEmpty())
-		Expect(result.Audiences).To(ContainElement("audience"))
-		Expect(result.Fingerprint).To(BeEmpty())
-		Expect(result.NotBefore).To(BeTemporally("~", notBefore, time.Microsecond))
-		Expect(result.Expires).To(BeTemporally("~", expiry, time.Microsecond))
+	BeforeEach(func() {
+		signer = createSigner()
+		verifier = createVerifier()
 	})
+
+	DescribeTable("should succeed",
+		func(subject, audience string, online bool, nbf, exp time.Time) {
+			token, err := jwt.Sign(signer, subject, audience, online, nbf, exp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(token).NotTo(BeEmpty())
+
+			result, err := verifier.Verify(token)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ID).NotTo(BeEmpty())
+			Expect(result.Fingerprint).To(BeEmpty())
+			Expect(result.Subject).To(Equal(subject))
+			Expect(result.Audiences).To(ContainElement(audience))
+			Expect(result.IsOnline).To(Equal(online))
+			Expect(result.NotBefore).To(BeTemporally("~", nbf, time.Microsecond))
+			Expect(result.Expires).To(BeTemporally("~", exp, time.Microsecond))
+
+			Expect(result.Claims[jwt.Subject]).To(ContainElement(jwt.String(jwt.Subject, subject)))
+			Expect(result.Claims["onl"]).To(ContainElement(jwt.Bool("onl", online)))
+			Expect(result.Claims[jwt.Audience]).To(ContainElement(jwt.String(jwt.Audience, audience)))
+		},
+		Entry(
+			"standard token",
+			"subject", "audience", false, time.Now().Add(-1*time.Minute).UTC(), time.Now().Add(time.Hour).UTC(),
+		),
+		Entry(
+			"offline with array of claims",
+			"subject", "audience", false, time.Now().Add(-1*time.Minute).UTC(), time.Now().Add(time.Hour).UTC(),
+		),
+		Entry(
+			"online with array of claims",
+			"subject", "audience", true, time.Now().Add(-1*time.Minute).UTC(), time.Now().Add(time.Hour).UTC(),
+		),
+	)
 
 	It("should succeed, with multiple audiences, returning matched audience", func() {
 		issued, err := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
@@ -48,7 +73,6 @@ var _ = Describe("JWT Verifier", func() {
 	})
 
 	It("should succeed, with array of claims", func() {
-
 		notBefore := time.Now().UTC()
 		expiry := time.Now().Add(time.Hour).UTC()
 		token, err := jwt.Sign(signer, "subject", "audience", false, notBefore, expiry)
@@ -67,34 +91,6 @@ var _ = Describe("JWT Verifier", func() {
 
 		Expect(result.Claims[jwt.Subject]).To(ContainElement(jwt.String(jwt.Subject, "subject")))
 		Expect(result.Claims["onl"]).To(ContainElement(jwt.Bool("onl", false)))
-		Expect(result.Claims[jwt.Audience]).To(ContainElement(jwt.String(jwt.Audience, "audience")))
-
-		nbf := result.Claims[jwt.NotBefore][0]
-		nbfTime, nbfErr := nbf.Time()
-		Expect(nbfErr).NotTo(HaveOccurred())
-		Expect(nbfTime).To(BeTemporally("~", notBefore, time.Microsecond))
-	})
-
-	It("should succeed, online token, with array of claims", func() {
-
-		notBefore := time.Now().UTC()
-		expiry := time.Now().Add(time.Hour).UTC()
-		token, err := jwt.Sign(signer, "subject", "audience", true, notBefore, expiry)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(token).NotTo(BeEmpty())
-
-		result, err := verifier.Verify(token)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(result.IsOnline).To(BeTrue())
-		Expect(result.Subject).To(Equal("subject"))
-		Expect(result.ID).NotTo(BeEmpty())
-		Expect(result.Audiences).To(ContainElement("audience"))
-		Expect(result.Fingerprint).To(BeEmpty())
-		Expect(result.NotBefore).To(BeTemporally("~", notBefore, time.Microsecond))
-		Expect(result.Expires).To(BeTemporally("~", expiry, time.Microsecond))
-
-		Expect(result.Claims[jwt.Subject]).To(ContainElement(jwt.String(jwt.Subject, "subject")))
-		Expect(result.Claims["onl"]).To(ContainElement(jwt.Bool("onl", true)))
 		Expect(result.Claims[jwt.Audience]).To(ContainElement(jwt.String(jwt.Audience, "audience")))
 
 		nbf := result.Claims[jwt.NotBefore][0]
@@ -180,17 +176,18 @@ var _ = Describe("JWT Verifier", func() {
 	})
 
 	It("should succeed, claim:custom(int type)", func() {
+		intVal := 99
 		token, err := signer.SignClaims(
 			jwt.String(jwt.Subject, "subject"),
 			jwt.String(jwt.Audience, "audience"),
-			jwt.Any("custom", int64(99)),
+			jwt.Any("custom", intVal),
 		)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(token).NotTo(BeEmpty())
 
 		result, err := verifier.Verify(token)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.Claims["custom"]).To(ContainElement(jwt.Int("custom", 99)))
+		Expect(result.Claims["custom"]).To(ContainElement(jwt.Int("custom", int64(intVal))))
 	})
 
 	It("should succeed, Includes Fingerprint", func() {
@@ -221,7 +218,7 @@ var _ = Describe("JWT Verifier", func() {
 	})
 
 	It("should succeed, Algorithm RS256", func() {
-		privateKey, err := jwt.ParsePKCS1PrivateKeyFromFileAFS(afs, "key.pem")
+		privateKey, err := jwt.ParsePKCS1PrivateKeyFromFileAFS(createAfs(), "key.pem")
 		Expect(err).NotTo(HaveOccurred())
 		algSigner := &jwt.RSASigner{
 			Algorithm:  jwt.RS256,
@@ -238,7 +235,7 @@ var _ = Describe("JWT Verifier", func() {
 	})
 
 	It("should succeed, Algorithm RS384", func() {
-		privateKey, err := jwt.ParsePKCS1PrivateKeyFromFileAFS(afs, "key.pem")
+		privateKey, err := jwt.ParsePKCS1PrivateKeyFromFileAFS(createAfs(), "key.pem")
 		Expect(err).NotTo(HaveOccurred())
 		algSigner := &jwt.RSASigner{
 			Algorithm:  jwt.RS384,
@@ -255,7 +252,7 @@ var _ = Describe("JWT Verifier", func() {
 	})
 
 	It("should succeed, Algorithm RS512", func() {
-		privateKey, err := jwt.ParsePKCS1PrivateKeyFromFileAFS(afs, "key.pem")
+		privateKey, err := jwt.ParsePKCS1PrivateKeyFromFileAFS(createAfs(), "key.pem")
 		Expect(err).NotTo(HaveOccurred())
 		algSigner := &jwt.RSASigner{
 			Algorithm:  jwt.RS512,
@@ -272,7 +269,7 @@ var _ = Describe("JWT Verifier", func() {
 	})
 
 	It("should fail, invalid algorithm HS256", func() {
-		privateKey, err := jwt.ParsePKCS1PrivateKeyFromFileAFS(afs, "key.pem")
+		privateKey, err := jwt.ParsePKCS1PrivateKeyFromFileAFS(createAfs(), "key.pem")
 		Expect(err).NotTo(HaveOccurred())
 		algSigner := &jwt.RSASigner{
 			Algorithm:  "HS256",
@@ -318,7 +315,14 @@ var _ = Describe("JWT Verifier", func() {
 	})
 
 	It("token not valid yet", func() {
-		token, err := jwt.Sign(signer, "subject", "audience", false, time.Now().Add(time.Minute), time.Now().Add(time.Hour))
+		token, err := jwt.Sign(
+			signer,
+			"subject",
+			"audience",
+			false,
+			time.Now().Add(time.Minute),
+			time.Now().Add(time.Hour),
+		)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(token).NotTo(BeEmpty())
 
@@ -329,7 +333,14 @@ var _ = Describe("JWT Verifier", func() {
 	})
 
 	It("token expired", func() {
-		token, err := jwt.Sign(signer, "subject", "audience", false, time.Now().Add(-1*time.Hour), time.Now().Add(-1*time.Minute))
+		token, err := jwt.Sign(
+			signer,
+			"subject",
+			"audience",
+			false,
+			time.Now().Add(-1*time.Hour),
+			time.Now().Add(-1*time.Minute),
+		)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(token).NotTo(BeEmpty())
 
@@ -361,9 +372,90 @@ var _ = Describe("JWT Verifier", func() {
 	})
 
 	It("valid jwt, invalid signing", func() {
-		result, err := verifier.Verify([]byte("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"))
+		result, err := verifier.Verify(
+			[]byte("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" +
+				".eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG" +
+				"4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
+				"SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+			))
 		Expect(err).To(HaveOccurred())
 		Expect(result.IsOnline).To(BeFalse())
 		Expect(result.Subject).NotTo(Equal("subject"))
+	})
+
+	It("should reject not-yet-valid token", func() {
+		notBefore := time.Now().Add(time.Minute)
+		expires := time.Now().Add(time.Hour)
+		issued := time.Now()
+		token, err := signer.SignClaims(
+			jwt.String(jwt.Subject, "subject"),
+			jwt.String(jwt.Audience, "audience"),
+			jwt.Time(jwt.Issued, issued),
+			jwt.Time(jwt.NotBefore, notBefore),
+			jwt.Time(jwt.Expires, expires),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(token).NotTo(BeEmpty())
+
+		result, err := verifier.Verify(token)
+		Expect(err).To(HaveOccurred())
+		Expect(result.Subject).To(BeEmpty())
+		Expect(result.IsOnline).To(BeFalse())
+		Expect(result.Fingerprint).To(BeEmpty())
+		Expect(result.NotBefore).To(Equal(time.Time{}))
+		Expect(result.Expires).To(Equal(time.Time{}))
+		// Expect(result.Claims).To(ContainElement(jwt.Time(jwt.Issued, issued)))
+		// Expect(result.NotBefore).To(BeTemporally("~", notBefore, time.Millisecond))
+		// Expect(result.Expires).To(BeTemporally("~", expires, time.Millisecond))
+	})
+
+	It("should reject invalid expiry/notbefore order", func() {
+		notBefore := time.Now().Add(time.Minute)
+		expires := time.Now().Add(-1 * time.Hour)
+		issued := time.Now()
+		token, err := signer.SignClaims(
+			jwt.String(jwt.Subject, "subject"),
+			jwt.String(jwt.Audience, "audience"),
+			jwt.Time(jwt.Issued, issued),
+			jwt.Time(jwt.NotBefore, notBefore),
+			jwt.Time(jwt.Expires, expires),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(token).NotTo(BeEmpty())
+
+		result, err := verifier.Verify(token)
+		Expect(err).To(HaveOccurred())
+		Expect(result.Subject).To(BeEmpty())
+		Expect(result.IsOnline).To(BeFalse())
+		Expect(result.Fingerprint).To(BeEmpty())
+		Expect(result.NotBefore).To(Equal(time.Time{}))
+		Expect(result.Expires).To(Equal(time.Time{}))
+	})
+
+	It("should have valid issued date", func() {
+		notBefore := time.Now().Add(-1 * time.Minute)
+		expires := time.Now().Add(time.Hour)
+		issued := time.Now()
+		token, err := signer.SignClaims(
+			jwt.String(jwt.Subject, "subject"),
+			jwt.String(jwt.Audience, "audience"),
+			jwt.Time(jwt.Issued, issued),
+			jwt.Time(jwt.NotBefore, notBefore),
+			jwt.Time(jwt.Expires, expires),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(token).NotTo(BeEmpty())
+
+		result, err := verifier.Verify(token)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.Subject).To(Equal("subject"))
+		Expect(result.Audiences).To(ContainElement("audience"))
+		Expect(result.NotBefore).To(BeTemporally("~", notBefore, time.Millisecond))
+		Expect(result.Expires).To(BeTemporally("~", expires, time.Millisecond))
+
+		issuedAt, err := result.Claims[jwt.Issued][0].Time()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(issuedAt).To(BeTemporally("~", issued, time.Millisecond))
+
 	})
 })

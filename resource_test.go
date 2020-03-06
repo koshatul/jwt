@@ -2,36 +2,37 @@ package jwt_test
 
 import (
 	"github.com/koshatul/jwt/v2"
-	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 )
 
-var (
-	afs      afero.Fs
-	verifier jwt.Verifier
-	signer   jwt.Signer
-)
+func createAfs() afero.Fs {
+	afs := afero.NewMemMapFs()
+	_ = afero.WriteFile(afs, "cert.pem", []byte(rsaPublicKey), 0755)
+	_ = afero.WriteFile(afs, "key.pem", []byte(rsaPrivateKey), 0755)
 
-var _ = BeforeSuite(func() {
-	afs = afero.NewMemMapFs()
-	afero.WriteFile(afs, "cert.pem", []byte(rsaPublicKey), 0755)
-	afero.WriteFile(afs, "key.pem", []byte(rsaPrivateKey), 0755)
+	return afs
+}
 
-	publicKey, err := jwt.ParsePKCS1PublicKeyFromFileAFS(afs, "cert.pem")
+func createSigner() jwt.Signer {
+	privateKey, err := jwt.ParsePKCS1PrivateKeyFromFileAFS(createAfs(), "key.pem")
 	Expect(err).NotTo(HaveOccurred())
-	verifier = &jwt.RSAVerifier{
-		Audience:  "audience",
-		PublicKey: publicKey,
-	}
 
-	privateKey, err := jwt.ParsePKCS1PrivateKeyFromFileAFS(afs, "key.pem")
-	Expect(err).NotTo(HaveOccurred())
-	signer = &jwt.RSASigner{
+	return &jwt.RSASigner{
 		Algorithm:  jwt.RS256,
 		PrivateKey: privateKey,
 	}
-})
+}
+
+func createVerifier() jwt.Verifier {
+	publicKey, err := jwt.ParsePKCS1PublicKeyFromFileAFS(createAfs(), "cert.pem")
+	Expect(err).NotTo(HaveOccurred())
+
+	return &jwt.RSAVerifier{
+		Audience:  "audience",
+		PublicKey: publicKey,
+	}
+}
 
 const rsaPrivateKey = `-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA1w0KHx3EpMnjHjEwEabM0fKbG5PvgJPSkEqYx7iex4hHDUgo

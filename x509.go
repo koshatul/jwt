@@ -26,11 +26,14 @@ func ParsePKCS1PublicKeyFromFileAFS(afs afero.Fs, filename string) (*rsa.PublicK
 // ParsePKCS1PublicKey parses a PKCS1 Public Certificate from a byte slice containing a PEM certificate.
 func ParsePKCS1PublicKey(data []byte) (*rsa.PublicKey, error) {
 	publicPem, _ := pem.Decode(data)
+
 	publicCert, err := x509.ParseCertificate(publicPem.Bytes)
 	if err != nil {
 		return nil, err
 	}
+
 	publicKey := publicCert.PublicKey.(*rsa.PublicKey)
+
 	return publicKey, nil
 }
 
@@ -53,5 +56,6 @@ func ParsePKCS1PrivateKeyFromFileAFS(afs afero.Fs, filename string) (*rsa.Privat
 func ParsePKCS1PrivateKey(data []byte) (*rsa.PrivateKey, error) {
 	privatePem, _ := pem.Decode(data)
 	privateKey, err := x509.ParsePKCS1PrivateKey(privatePem.Bytes)
+
 	return privateKey, err
 }

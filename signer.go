@@ -34,9 +34,10 @@ func NewRSASignerFromFile(filename string) (Signer, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &RSASigner{
 		PrivateKey: privateKey,
-		Algorithm:  jwt.RS256,
+		Algorithm:  RS256,
 	}, nil
 }
 
@@ -44,22 +45,31 @@ func NewRSASignerFromFile(filename string) (Signer, error) {
 // Duplicate keys will we overridden in order of apearance!
 // The issuer defaults to r.Issuer.
 func (r *RSASigner) SignClaims(claims ...Claim) ([]byte, error) {
-
 	tokenClaims, err := ConstructClaimsFromSlice(
 		append(
 			[]Claim{String("iss", r.Issuer)},
 			claims...,
 		)...,
 	)
+
 	if err != nil {
 		return nil, err
 	}
+
 	token, err := tokenClaims.RSASign(r.Algorithm, r.PrivateKey)
+
 	return token, err
 }
 
 // Sign takes a signer, subject, audience, online status, notBefore and expiry and produces a signed token
-func Sign(signer Signer, subject, audience string, online bool, notBefore, expiry time.Time) ([]byte, error) {
+func Sign(
+	signer Signer,
+	subject,
+	audience string,
+	online bool,
+	notBefore,
+	expiry time.Time,
+) ([]byte, error) {
 	return signer.SignClaims(
 		String(Subject, subject),
 		String(Audience, audience),
@@ -69,8 +79,17 @@ func Sign(signer Signer, subject, audience string, online bool, notBefore, expir
 	)
 }
 
-// SignFingerprint takes a signer, subject, audience, fingerprint, online status, notBefore and expiry and produces a signed token
-func SignFingerprint(signer Signer, subject, audience, fingerprint string, online bool, notBefore, expiry time.Time) ([]byte, error) {
+// SignFingerprint takes a signer, subject, audience, fingerprint, online status, notBefore and expiry
+// and produces a signed token
+func SignFingerprint(
+	signer Signer,
+	subject,
+	audience,
+	fingerprint string,
+	online bool,
+	notBefore,
+	expiry time.Time,
+) ([]byte, error) {
 	return signer.SignClaims(
 		String(Subject, subject),
 		String(Audience, audience),

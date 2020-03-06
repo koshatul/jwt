@@ -113,7 +113,13 @@ type Claim struct {
 // IsRegistered returns true if the Key is a IANA registered "JSON Web Token Claims".
 func (c Claim) IsRegistered() bool {
 	switch strings.ToLower(c.Key) {
-	case "issuer", Issuer, "subject", Subject, "audience", Audience, "expires", Expires, "notbefore", NotBefore, "issued", Issued, "id", ID:
+	case "issuer", Issuer,
+		"subject", Subject,
+		"audience", Audience,
+		"expires", Expires,
+		"notbefore", NotBefore,
+		"issued", Issued,
+		"id", ID:
 		return true
 	default:
 		return false
@@ -148,10 +154,12 @@ func (c Claim) Time() (time.Time, error) {
 		t := time.Unix(0, c.Integer)
 		return t, nil
 	}
+
 	if c.Type == Float64Type {
 		t := jwt.NumericTime(c.Float)
 		return t.Time(), nil
 	}
+
 	return time.Time{}, ErrInvalidClaimType
 }
 
@@ -168,14 +176,16 @@ func Float(key string, val float64) Claim {
 // Int constructs a claim with the given key and value.
 func Int(key string, val int64) Claim {
 	return Float(key, float64(val))
-	// TODO Find a way around the pascaldekloe/jwt package decoding json numbers as float64 (standard encoding/json Unmarshaling)
+	// TODO Find a way around the pascaldekloe/jwt package decoding json numbers
+	//   as float64 (standard encoding/json Unmarshaling)
 	// return Claim{Key: key, Type: Int64Type, Interface: int64(val)}
 }
 
 // Uint constructs a claim with the given key and value.
 func Uint(key string, val uint64) Claim {
 	return Float(key, float64(val))
-	// TODO Find a way around the pascaldekloe/jwt package decoding json numbers as float64 (standard encoding/json Unmarshaling)
+	// TODO Find a way around the pascaldekloe/jwt package decoding json numbers
+	//   as float64 (standard encoding/json Unmarshaling)
 	// return Claim{Key: key, Type: Uint64Type, Interface: uint64(val)}
 }
 
@@ -213,7 +223,7 @@ func Reflect(key string, val interface{}) Claim {
 // them. To minimize surprises, []byte values are treated as binary blobs, byte
 // values are treated as uint8, and runes are always treated as integers.
 //
-// nolint: gocyclo
+// nolint: gocyclo,funlen
 func Any(key string, value interface{}) Claim {
 	switch val := value.(type) {
 	// case ObjectMarshaler:
@@ -307,12 +317,15 @@ func Any(key string, value interface{}) Claim {
 	}
 }
 
-// ConstructClaimsFromSlice takes a slice of `Claim`s and returns a prepared `jwt.Claims` pointer, or an error if construction failed.
+// ConstructClaimsFromSlice takes a slice of `Claim`s and returns a prepared `jwt.Claims` pointer,
+// or an error if construction failed.
+//
 // Duplicate keys will we overridden in order of apearance!
 func ConstructClaimsFromSlice(claims ...Claim) (*jwt.Claims, error) {
 	tokenClaims := &jwt.Claims{
 		Set: map[string]interface{}{},
 	}
+
 	for _, claim := range claims {
 		if claim.IsRegistered() {
 			err := constructRegisteredClaim(tokenClaims, claim)
@@ -326,9 +339,11 @@ func ConstructClaimsFromSlice(claims ...Claim) (*jwt.Claims, error) {
 			}
 		}
 	}
+
 	if tokenClaims.ID == "" {
 		tokenClaims.ID = uuid.NewV4().String()
 	}
+
 	return tokenClaims, nil
 }
 
@@ -347,6 +362,7 @@ func constructRegisteredClaim(tokenClaims *jwt.Claims, claim Claim) error {
 			if err != nil {
 				return err
 			}
+
 			tokenClaims.Registered.Expires = jwt.NewNumericTime(t)
 		} else {
 			return errors.New("invalid type for exp")
@@ -357,6 +373,7 @@ func constructRegisteredClaim(tokenClaims *jwt.Claims, claim Claim) error {
 			if err != nil {
 				return err
 			}
+
 			tokenClaims.Registered.NotBefore = jwt.NewNumericTime(t)
 		} else {
 			return errors.New("invalid type for nbf")
@@ -367,6 +384,7 @@ func constructRegisteredClaim(tokenClaims *jwt.Claims, claim Claim) error {
 			if err != nil {
 				return err
 			}
+
 			tokenClaims.Registered.Issued = jwt.NewNumericTime(t)
 		} else {
 			return errors.New("invalid type for iat")
@@ -387,8 +405,11 @@ func constructUnregisteredClaim(tokenClaims *jwt.Claims, claim Claim) error {
 	// 	tokenClaims.Set[claim.Key] = claim.Interface.(uint64)
 	// case Float32Type, Float64Type:
 	// 	tokenClaims.Set[claim.Key] = claim.Float
-	// TODO Find a way around the pascaldekloe/jwt package decoding json numbers as float64 (standard encoding/json Unmarshaling)
-	case Int8Type, Int16Type, Int32Type, Int64Type, Uint8Type, Uint16Type, Uint32Type, Uint64Type, Float32Type, Float64Type:
+	// TODO Find a way around the pascaldekloe/jwt package decoding json numbers
+	//   as float64 (standard encoding/json Unmarshaling)
+	case Int8Type, Int16Type, Int32Type, Int64Type,
+		Uint8Type, Uint16Type, Uint32Type, Uint64Type,
+		Float32Type, Float64Type:
 		tokenClaims.Set[claim.Key] = claim.Float
 	case StringType:
 		tokenClaims.Set[claim.Key] = claim.String
@@ -403,9 +424,10 @@ func constructUnregisteredClaim(tokenClaims *jwt.Claims, claim Claim) error {
 		if err != nil {
 			return err
 		}
+
 		tokenClaims.Set[claim.Key] = jwt.NewNumericTime(t)
 	default:
-		return fmt.Errorf("Unsupported Claim Type: %d", claim.Type)
+		return fmt.Errorf("unsupported claim type: %d", claim.Type)
 	}
 
 	return nil
