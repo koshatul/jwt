@@ -9,7 +9,6 @@ import (
 )
 
 var _ = Describe("JWT Signer", func() {
-
 	var signer jwt.Signer
 	var verifier jwt.Verifier
 
@@ -139,7 +138,6 @@ var _ = Describe("JWT Signer", func() {
 		Expect(result.Fingerprint).To(BeEmpty())
 		Expect(result.NotBefore).To(BeTemporally("~", nbfTime, time.Microsecond))
 		Expect(result.Expires).To(BeTemporally("~", expTime, time.Microsecond))
-
 	})
 
 	It("should succeed with an online field and fingerprint", func() {
@@ -166,7 +164,6 @@ var _ = Describe("JWT Signer", func() {
 		Expect(result.Fingerprint).To(Equal("fingerpainting-is-fun"))
 		Expect(result.NotBefore).To(BeTemporally("~", nbfTime, time.Microsecond))
 		Expect(result.Expires).To(BeTemporally("~", expTime, time.Microsecond))
-
 	})
 
 	It("should carry through custom ID", func() {
@@ -233,5 +230,4 @@ var _ = Describe("JWT Signer", func() {
 		// Expect(result.NotBefore).To(BeTemporally("~", notBefore, time.Millisecond))
 		// Expect(result.Expires).To(BeTemporally("~", expires, time.Millisecond))
 	})
-
 })

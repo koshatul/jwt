@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	// RS256 RSASSA-PKCS1-v1_5 with SHA-256
+	// RS256 RSASSA-PKCS1-v1_5 with SHA-256.
 	RS256 = jwt.RS256
-	// RS384 RSASSA-PKCS1-v1_5 with SHA-348
+	// RS384 RSASSA-PKCS1-v1_5 with SHA-348.
 	RS384 = jwt.RS384
-	// RS512 RSASSA-PKCS1-v1_5 with SHA-512
+	// RS512 RSASSA-PKCS1-v1_5 with SHA-512.
 	RS512 = jwt.RS512
 )
 
@@ -51,7 +51,6 @@ func (r *RSASigner) SignClaims(claims ...Claim) ([]byte, error) {
 			claims...,
 		)...,
 	)
-
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +60,7 @@ func (r *RSASigner) SignClaims(claims ...Claim) ([]byte, error) {
 	return token, err
 }
 
-// Sign takes a signer, subject, audience, online status, notBefore and expiry and produces a signed token
+// Sign takes a signer, subject, audience, online status, notBefore and expiry and produces a signed token.
 func Sign(
 	signer Signer,
 	subject,
@@ -80,7 +79,7 @@ func Sign(
 }
 
 // SignFingerprint takes a signer, subject, audience, fingerprint, online status, notBefore and expiry
-// and produces a signed token
+// and produces a signed token.
 func SignFingerprint(
 	signer Signer,
 	subject,

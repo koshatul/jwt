@@ -14,19 +14,19 @@ import (
 var ErrInvalidClaimType = errors.New("invalid claim type")
 
 const (
-	// Issuer is the IANA Registered claim for JWT issuer
+	// Issuer is the IANA Registered claim for JWT issuer.
 	Issuer string = "iss"
-	// Subject is the IANA Registered claim for JWT subject
+	// Subject is the IANA Registered claim for JWT subject.
 	Subject string = "sub"
-	// Audience is the IANA Registered claim for JWT audience
+	// Audience is the IANA Registered claim for JWT audience.
 	Audience string = "aud"
-	// Expires is the IANA Registered claim for JWT expiry time
+	// Expires is the IANA Registered claim for JWT expiry time.
 	Expires string = "exp"
-	// NotBefore is the IANA Registered claim for JWT not before time
+	// NotBefore is the IANA Registered claim for JWT not before time.
 	NotBefore string = "nbf"
-	// Issued is the IANA Registered claim for JWT issue time
+	// Issued is the IANA Registered claim for JWT issue time.
 	Issued string = "iat"
-	// ID is the IANA Registered claim for JWT ID
+	// ID is the IANA Registered claim for JWT ID.
 	ID string = "jti"
 )
 
@@ -34,7 +34,7 @@ const (
 // and how it should be serialized.
 type ClaimType uint8
 
-// Type list borrowed from uber-go/zap
+// Type list borrowed from uber-go/zap.
 const (
 	// UnknownType is the default, this will throw an error.
 	UnknownType ClaimType = iota
@@ -126,7 +126,7 @@ func (c Claim) IsRegistered() bool {
 	}
 }
 
-// Field returns the JWT compatible field from some useful longer names
+// Field returns the JWT compatible field from some useful longer names.
 func (c Claim) Field() string {
 	switch strings.ToLower(c.Key) {
 	case "issuer", Issuer:
@@ -148,15 +148,17 @@ func (c Claim) Field() string {
 	}
 }
 
-// Time returns the time value of the `Claim` or an error if it is not a `TimeType`
+// Time returns the time value of the `Claim` or an error if it is not a `TimeType`.
 func (c Claim) Time() (time.Time, error) {
 	if c.Type == TimeType {
 		t := time.Unix(0, c.Integer)
+
 		return t, nil
 	}
 
 	if c.Type == Float64Type {
 		t := jwt.NumericTime(c.Float)
+
 		return t.Time(), nil
 	}
 
@@ -175,18 +177,18 @@ func Float(key string, val float64) Claim {
 
 // Int constructs a claim with the given key and value.
 func Int(key string, val int64) Claim {
-	return Float(key, float64(val))
 	// TODO Find a way around the pascaldekloe/jwt package decoding json numbers
 	//   as float64 (standard encoding/json Unmarshaling)
 	// return Claim{Key: key, Type: Int64Type, Interface: int64(val)}
+	return Float(key, float64(val))
 }
 
 // Uint constructs a claim with the given key and value.
 func Uint(key string, val uint64) Claim {
-	return Float(key, float64(val))
 	// TODO Find a way around the pascaldekloe/jwt package decoding json numbers
 	//   as float64 (standard encoding/json Unmarshaling)
 	// return Claim{Key: key, Type: Uint64Type, Interface: uint64(val)}
+	return Float(key, float64(val))
 }
 
 // Time constructs a claim with the given key and value.
@@ -195,7 +197,6 @@ func Time(key string, val time.Time) Claim {
 		Key:     key,
 		Type:    TimeType,
 		Integer: val.UnixNano(),
-		// Interface: val.Location(),
 	}
 }
 
@@ -223,7 +224,7 @@ func Reflect(key string, val interface{}) Claim {
 // them. To minimize surprises, []byte values are treated as binary blobs, byte
 // values are treated as uint8, and runes are always treated as integers.
 //
-// nolint: gocyclo,funlen
+//nolint:funlen
 func Any(key string, value interface{}) Claim {
 	switch val := value.(type) {
 	// case ObjectMarshaler:
@@ -341,13 +342,13 @@ func ConstructClaimsFromSlice(claims ...Claim) (*jwt.Claims, error) {
 	}
 
 	if tokenClaims.ID == "" {
-		tokenClaims.ID = uuid.NewV4().String()
+		tokenClaims.ID = uuid.Must(uuid.NewV4()).String()
 	}
 
 	return tokenClaims, nil
 }
 
-// constructRegisteredClaim adds IANA registered `Claim` fields to the supplied `jwt.Claims`
+// constructRegisteredClaim adds IANA registered `Claim` fields to the supplied `jwt.Claims`.
 func constructRegisteredClaim(tokenClaims *jwt.Claims, claim Claim) error {
 	switch claim.Field() {
 	case Issuer:
@@ -396,7 +397,7 @@ func constructRegisteredClaim(tokenClaims *jwt.Claims, claim Claim) error {
 	return nil
 }
 
-// constructRegisteredClaim adds unregistered `Claim` fields to the supplied `jwt.Claims`
+// constructRegisteredClaim adds unregistered `Claim` fields to the supplied `jwt.Claims`.
 func constructUnregisteredClaim(tokenClaims *jwt.Claims, claim Claim) error {
 	switch claim.Type {
 	// case Int8Type, Int16Type, Int32Type, Int64Type:

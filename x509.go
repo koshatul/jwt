@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 
 	"github.com/spf13/afero"
 )
@@ -32,9 +33,11 @@ func ParsePKCS1PublicKey(data []byte) (*rsa.PublicKey, error) {
 		return nil, err
 	}
 
-	publicKey := publicCert.PublicKey.(*rsa.PublicKey)
+	if publicKey, ok := publicCert.PublicKey.(*rsa.PublicKey); ok {
+		return publicKey, nil
+	}
 
-	return publicKey, nil
+	return nil, errors.New("unable to parse public key from certificate")
 }
 
 // ParsePKCS1PrivateKeyFromFile parses a PKCS1 Private Key from a PEM file.

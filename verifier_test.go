@@ -10,7 +10,6 @@ import (
 )
 
 var _ = Describe("JWT Verifier", func() {
-
 	var signer jwt.Signer
 	var verifier jwt.Verifier
 
@@ -289,7 +288,6 @@ var _ = Describe("JWT Verifier", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result.Subject).To(Equal("subject"))
 		Expect(result.Audiences).To(ContainElement("audience"))
-
 	})
 
 	It("online token", func() {
@@ -456,6 +454,5 @@ var _ = Describe("JWT Verifier", func() {
 		issuedAt, err := result.Claims[jwt.Issued][0].Time()
 		Expect(err).NotTo(HaveOccurred())
 		Expect(issuedAt).To(BeTemporally("~", issued, time.Millisecond))
-
 	})
 })

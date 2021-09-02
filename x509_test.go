@@ -11,7 +11,6 @@ import (
 )
 
 var _ = Describe("x509 File Operations", func() {
-
 	It("should succeed, public key from afs", func() {
 		publicKey, err := jwt.ParsePKCS1PublicKeyFromFileAFS(createAfs(), "cert.pem")
 		Expect(err).NotTo(HaveOccurred())
@@ -38,7 +37,8 @@ var _ = Describe("x509 File Operations", func() {
 
 	It("should fail, public key from afs, loading wrong type", func() {
 		publicKey, err := jwt.ParsePKCS1PublicKeyFromFileAFS(createAfs(), "key.pem")
-		Expect(err).To(BeAssignableToTypeOf(asn1.StructuralError{}))
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(HavePrefix("x509: malformed tbs certificate"))
 		Expect(publicKey).To(BeNil())
 	})
 
@@ -47,5 +47,4 @@ var _ = Describe("x509 File Operations", func() {
 		Expect(err).To(BeAssignableToTypeOf(asn1.StructuralError{}))
 		Expect(privateKey).To(BeNil())
 	})
-
 })
